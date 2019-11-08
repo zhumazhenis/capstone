@@ -74,6 +74,17 @@ public:
         return s;
     }
 
+    vector<vector<int>> rotateVertically(const vector<vector<int>> &matrix) {
+        vector<vector<int>> rotatedMatrix(matrix);
+        int rows = matrix.size();
+        for (int i = 0; i < matrix.size(); i++) {
+            for (int j = 0; j < matrix[i].size(); j++) {
+                rotatedMatrix[rows - i - 1][j] = matrix[i][j];
+            }
+        }
+        return rotatedMatrix;
+    }
+
     vector<vector<int>> square(const vector<vector<int>> &matrix) {
         vector<vector<int>> matrixSquare(matrix);
         for (int i = 0; i < matrix.size(); i++) {
@@ -157,6 +168,43 @@ public:
         return Image(matrix);
     }
 
+    Image readBmp(string imageName) {
+        ifstream in(imageName);
+
+        // file data
+        char *bytes;
+        int length;
+
+        // image data
+        int width, height;
+        vector<vector<int>> matrix;
+
+        // read bytes
+        in.seekg(0, std::ifstream::end);
+        length = in.tellg();
+        bytes = new char[length];
+        in.seekg(0, std::ifstream::beg);
+        in.read(bytes, length);
+
+        // image width and height
+        width = *(int *) (bytes + 0x12);
+        height = *(int *) (bytes + 0x16);
+
+        // extract image pixels
+        matrix = vector<vector<int>>(height, vector<int>(width));
+        for (int i = 0; i < height; i++) {
+            for (int j = 0; j < width; j++) {
+                int pixel = bytes[i * height + j + 0x36];
+                if (pixel < 0) {
+                    pixel = 256 + (int) pixel;
+                }
+                matrix[i][j] = pixel;
+            }
+        }
+        matrix = matrixOperation.rotateVertically(matrix);
+        return Image(matrix);
+    }
+
     void write(string imageName, Image image) {
         ofstream out(imageName);
         vector<vector<int>> matrix = image.getMatrix();
@@ -186,10 +234,8 @@ public:
 int main() {
 
     ImageService imageService;
-
-    Image image = imageService.read("road.txt");
-    Image edgeImage = imageService.edge(image);
-    imageService.write("edgeRoad.txt", edgeImage);
+    Image lenaImg = imageService.readBmp("lena512.bmp");
+    imageService.write("lena512.txt", lenaImg);
 
     return 0;
 }
